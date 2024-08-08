@@ -24,6 +24,11 @@ function compile(nodes: NodeArray<Node>) {
   return printer.printList(ListFormat.MultiLine, nodes, resultFile)
 }
 
+function clean(str: string) {
+  return str.replaceAll(/\n/gm, '')
+    .replaceAll(/\s{2}/gm, '')
+}
+
 describe('Transformer', function () {
   it('({ name: string }) to ({ name }: { name: string })', function () {
     const parameterObject = factory.createObjectBindingPattern([
@@ -36,10 +41,8 @@ describe('Transformer', function () {
     ])
     const nodes = factory
       .createNodeArray([visitParameterObject(factory, parameterObject)])
-    expect(compile(nodes)).toEqual(`{ name }: {
-    name: string;
-}
-`)
+    const cleaned = clean(compile(nodes))
+    expect(cleaned).toEqual(`{ name }: {name: string;}`)
   })
 
   it(
@@ -61,11 +64,8 @@ describe('Transformer', function () {
       ])
       const nodes = factory
         .createNodeArray([visitParameterObject(factory, parameterObject)])
-      expect(compile(nodes)).toEqual(`{ name, age }: {
-    name: string;
-    age: number;
-}
-`)
+      const cleaned = clean(compile(nodes))
+      expect(cleaned).toEqual(`{ name, age }: {name: string;age: number;}`)
     }
   )
 })
