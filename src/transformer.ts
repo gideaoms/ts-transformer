@@ -1,89 +1,71 @@
-import {
-  Identifier,
-  Node,
-  NodeFactory,
-  ObjectBindingPattern,
-  PluginConfig,
-  Program,
-  SourceFile,
-  SyntaxKind,
-  TransformationContext,
-  TransformerExtras,
-} from 'typescript'
+import ts from 'typescript'
+
+const kinds = {
+  string: ts.SyntaxKind.StringKeyword,
+  number: ts.SyntaxKind.NumberKeyword,
+} as const
 
 export default function (
-  program: Program,
-  pluginConfig: PluginConfig,
-  extras: TransformerExtras
+  _program: ts.Program,
+  _pluginConfig: ts.PluginConfig,
+  extras: ts.TransformerExtras
 ) {
-  const { ts } = extras
-  return function (context: TransformationContext) {
-    const { factory } = context
-    return function (sourceFile: SourceFile) {
-      function visit(node: Node) {
+  extras.removeDiagnostic(0)
+  extras.removeDiagnostic(0)
+  return function (context: ts.TransformationContext) {
+    return function (sourceFile: ts.SourceFile) {
+      function visit(node: ts.Node) {
         if (
           ts.isParameter(node) &&
           ts.isObjectBindingPattern(node.name) &&
           node.type === undefined
         ) {
-          return visitParameterObject(factory, node.name)
+          const variables = node
+            .getText()
+            .replace(/^\{|\}$/gm, '')
+            .split(',')
+            .map(item => item.trim())
+            .map(item => {
+              const [property, kind] = item.split(' as ')
+              return {
+                property,
+                kind: kind as (keyof typeof kinds) | undefined
+              }
+            })
+          return ts.factory.createParameterDeclaration(
+            undefined,
+            undefined,
+            ts.factory.createObjectBindingPattern(
+              variables.map((variable) => ts.factory.createBindingElement(
+                undefined,
+                undefined,
+                ts.factory.createIdentifier(variable.property),
+                undefined
+              ))
+            ),
+            undefined,
+            ts.factory.createTypeLiteralNode(
+              variables
+                .map(variable => {
+                  if (variable.kind === undefined) {
+                    return undefined
+                  }
+                  const kind = kinds[variable.kind]
+                  return ts.factory.createPropertySignature(
+                    undefined,
+                    ts.factory.createIdentifier(variable.property),
+                    undefined,
+                    ts.factory.createKeywordTypeNode(kind),
+                  )
+                })
+                .filter(variable => variable !== undefined)
+            ),
+            undefined,
+          )
         }
         return ts.visitEachChild(node, visit, context)
       }
       return ts.visitNode(sourceFile, visit)
     }
-  }
-}
-
-export function visitParameterObject(
-  factory: NodeFactory, parameterObject: ObjectBindingPattern
-) {
-  const elements = parameterObject.elements
-    .map(function (element) {
-      if (!element.propertyName) {
-        return undefined
-      }
-      const variableName = element.propertyName as Identifier
-      const variableType = element.name as Identifier
-      return {
-        variableName: variableName.escapedText.toString(),
-        variableType: variableType.escapedText.toString(),
-      }
-    })
-    .filter(element => element !== undefined)
-  return factory.createParameterDeclaration(
-    undefined,
-    undefined,
-    factory.createObjectBindingPattern(
-      elements.map(element => factory.createBindingElement(
-        undefined,
-        undefined,
-        factory.createIdentifier(element.variableName),
-        undefined
-      ))
-    ),
-    undefined,
-    factory.createTypeLiteralNode(
-      elements.map(element => factory.createPropertySignature(
-        undefined,
-        factory.createIdentifier(element.variableName),
-        undefined,
-        factory.createKeywordTypeNode(toType(element.variableType)),
-      ))
-    ),
-    undefined,
-  )
-}
-
-function toType(type: string) {
-  switch (type) {
-    case 'string': {
-      return SyntaxKind.StringKeyword as const
-    }
-    case 'number': {
-      return SyntaxKind.NumberKeyword as const
-    }
-    default:
-      throw new Error('Invalid type')
   }
 }

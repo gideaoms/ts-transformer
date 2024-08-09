@@ -1,71 +1,59 @@
-import {
-  createPrinter,
-  createSourceFile,
-  factory,
-  ListFormat,
-  NewLineKind,
-  Node,
-  NodeArray,
-  ScriptKind,
-  ScriptTarget,
-} from 'typescript'
+import ts from 'typescript';
 import { describe, it, expect } from 'vitest'
-import { visitParameterObject } from './transformer'
+import transformer from './transformer';
 
-function compile(nodes: NodeArray<Node>) {
-  const printer = createPrinter({ newLine: NewLineKind.LineFeed })
-  const resultFile = createSourceFile(
-    "temp.ts",
-    "",
-    ScriptTarget.Latest,
-    false,
-    ScriptKind.TS
-  )
-  return printer.printList(ListFormat.MultiLine, nodes, resultFile)
-}
-
-function clean(str: string) {
-  return str.replaceAll(/\n/gm, '')
-    .replaceAll(/\s{2}/gm, '')
+function compile(sourceText: string) {
+  const diagnostics: ts.Diagnostic[] = [];
+  const program = ts.createProgram({
+    options: {},
+    rootNames: ['test.ts'],
+  });
+  const pluginConfig = {};
+  const extras = {
+    removeDiagnostic: (index: number) => { diagnostics.splice(index, 1); },
+  } as ts.TransformerExtras;
+  const sourceFile1 = ts.createSourceFile(
+    "test.ts",
+    sourceText,
+    ts.ScriptTarget.ES2022,
+    true,
+    ts.ScriptKind.TS,
+  );
+  const { transformed } = ts.transform(sourceFile1, [
+    transformer(
+      program,
+      pluginConfig,
+      extras
+    ) as ts.TransformerFactory<ts.SourceFile>
+  ]);
+  const printer = ts.createPrinter();
+  const sourceFile2 = printer.printFile(transformed[0]);
+  const regExp = new RegExp(/\s{2,}|\n/gm)
+  return sourceFile2.replaceAll(regExp, '')
 }
 
 describe('Transformer', function () {
-  it('({ name: string }) to ({ name }: { name: string })', function () {
-    const parameterObject = factory.createObjectBindingPattern([
-      factory.createBindingElement(
-        undefined,
-        factory.createIdentifier("name"),
-        factory.createIdentifier("string"),
-        undefined
-      )
-    ])
-    const nodes = factory
-      .createNodeArray([visitParameterObject(factory, parameterObject)])
-    const cleaned = clean(compile(nodes))
-    expect(cleaned).toEqual(`{ name }: {name: string;}`)
+  it('should transform "name as string"', function () {
+    const sourceText =
+      'const sayHello = ({ name as string }) => {}'
+    const expected =
+      'const sayHello = ({ name }: {name: string;}) => { };'
+    expect(compile(sourceText)).toEqual(expected)
   })
 
-  it(
-    '({ name: string, age: number }) to ({ name, age }: { name: string; age: number })',
-    function () {
-      const parameterObject = factory.createObjectBindingPattern([
-        factory.createBindingElement(
-          undefined,
-          factory.createIdentifier("name"),
-          factory.createIdentifier("string"),
-          undefined
-        ),
-        factory.createBindingElement(
-          undefined,
-          factory.createIdentifier("age"),
-          factory.createIdentifier("number"),
-          undefined
-        )
-      ])
-      const nodes = factory
-        .createNodeArray([visitParameterObject(factory, parameterObject)])
-      const cleaned = clean(compile(nodes))
-      expect(cleaned).toEqual(`{ name, age }: {name: string;age: number;}`)
-    }
-  )
+  it('should transform "name as string, age as string"', function () {
+    const sourceText =
+      'const sayHello = ({ name as string, age as number }) => {}'
+    const expected =
+      'const sayHello = ({ name, age }: {name: string;age: number;}) => { };'
+    expect(compile(sourceText)).toEqual(expected)
+  })
+
+  it('should transform "name as string, age as string, country"', function () {
+    const sourceText =
+      'const sayHello = ({ name as string, age as number, country }) => {}'
+    const expected =
+      'const sayHello = ({ name, age, country }: {name: string;age: number;}) => { };'
+    expect(compile(sourceText)).toEqual(expected)
+  })
 })
