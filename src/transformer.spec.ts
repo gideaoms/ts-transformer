@@ -64,4 +64,12 @@ describe('Transformer', function () {
       'const sayHello = ({ isLoading }: {isLoading: boolean;}) => { };'
     expect(compile(sourceText)).toEqual(expected)
   })
+
+  it.todo('should support type reference')
+
+  it.todo('should support nested object')
+
+  it.todo('should support default value')
+
+  it.todo('should support default with type reference. e.g. status as Status = "active"')
 })
