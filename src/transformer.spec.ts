@@ -28,8 +28,8 @@ function compile(sourceText: string) {
   ]);
   const printer = ts.createPrinter();
   const sourceFile2 = printer.printFile(transformed[0]);
-  const regExp = new RegExp(/\s{2,}|\n/gm)
-  return sourceFile2.replaceAll(regExp, '')
+  const extraSpaceAndBreakLine = new RegExp(/\s{2,}|\n/gm)
+  return sourceFile2.replaceAll(extraSpaceAndBreakLine, '')
 }
 
 describe('Transformer', function () {
