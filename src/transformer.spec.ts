@@ -65,6 +65,14 @@ describe('Transformer', function () {
     expect(compile(sourceText)).toEqual(expected)
   })
 
+  it('should transform "user as any"', function () {
+    const sourceText =
+      'const sayHello = ({ user as any }) => {}'
+    const expected =
+      'const sayHello = ({ user }: {user: any;}) => { };'
+    expect(compile(sourceText)).toEqual(expected)
+  })
+
   it.todo('should support type reference')
 
   it.todo('should support nested object')
@@ -72,4 +80,6 @@ describe('Transformer', function () {
   it.todo('should support default value')
 
   it.todo('should support default with type reference. e.g. status as Status = "active"')
+
+  it.todo('should remove the invalid diagnostics')
 })

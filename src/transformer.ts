@@ -4,6 +4,7 @@ const kinds = {
   string: ts.SyntaxKind.StringKeyword,
   number: ts.SyntaxKind.NumberKeyword,
   boolean: ts.SyntaxKind.BooleanKeyword,
+  any: ts.SyntaxKind.AnyKeyword,
 } as const
 
 export default function (
