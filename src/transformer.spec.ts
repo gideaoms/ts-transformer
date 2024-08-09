@@ -56,4 +56,12 @@ describe('Transformer', function () {
       'const sayHello = ({ name, age, country }: {name: string;age: number;}) => { };'
     expect(compile(sourceText)).toEqual(expected)
   })
+
+  it('should transform "isLoading as boolean"', function () {
+    const sourceText =
+      'const sayHello = ({ isLoading as boolean }) => {}'
+    const expected =
+      'const sayHello = ({ isLoading }: {isLoading: boolean;}) => { };'
+    expect(compile(sourceText)).toEqual(expected)
+  })
 })

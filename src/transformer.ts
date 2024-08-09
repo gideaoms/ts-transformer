@@ -3,6 +3,7 @@ import ts from 'typescript'
 const kinds = {
   string: ts.SyntaxKind.StringKeyword,
   number: ts.SyntaxKind.NumberKeyword,
+  boolean: ts.SyntaxKind.BooleanKeyword,
 } as const
 
 export default function (
