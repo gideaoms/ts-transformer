@@ -1,11 +1,16 @@
 import ts from 'typescript'
 
-const kinds = {
-  string: ts.SyntaxKind.StringKeyword,
-  number: ts.SyntaxKind.NumberKeyword,
-  boolean: ts.SyntaxKind.BooleanKeyword,
-  any: ts.SyntaxKind.AnyKeyword,
-} as const
+function toSourceFile(sourceText: string) {
+  const sourceFile = ts.createSourceFile(
+    "test.ts",
+    sourceText,
+    ts.ScriptTarget.ES2022,
+    true,
+    ts.ScriptKind.TS,
+  );
+  const { transformed } = ts.transform(sourceFile, []);
+  return transformed[0]
+}
 
 export default function (
   _program: ts.Program,
@@ -31,39 +36,17 @@ export default function (
               const [property, kind] = item.split(' as ')
               return {
                 property,
-                kind: kind as (keyof typeof kinds) | undefined
+                kind: kind as string | undefined,
               }
             })
-          return ts.factory.createParameterDeclaration(
-            undefined,
-            undefined,
-            ts.factory.createObjectBindingPattern(
-              variables.map((variable) => ts.factory.createBindingElement(
-                undefined,
-                undefined,
-                ts.factory.createIdentifier(variable.property),
-                undefined
-              ))
-            ),
-            undefined,
-            ts.factory.createTypeLiteralNode(
-              variables
-                .map(variable => {
-                  if (variable.kind === undefined) {
-                    return undefined
-                  }
-                  const kind = kinds[variable.kind]
-                  return ts.factory.createPropertySignature(
-                    undefined,
-                    ts.factory.createIdentifier(variable.property),
-                    undefined,
-                    ts.factory.createKeywordTypeNode(kind),
-                  )
-                })
-                .filter(variable => variable !== undefined)
-            ),
-            undefined,
-          )
+          const properties = variables.map(item => item.property).join(', ')
+          const kinds = variables.filter(item => item.kind !== undefined)
+            .map(item => `${item.property}: ${item.kind}`)
+            .join(', ')
+          const sourceText = `function fn({${properties}}: {${kinds}}) {}`
+          const sourceFile = toSourceFile(sourceText)
+          const fn = sourceFile.statements[0] as ts.FunctionDeclaration
+          return fn.parameters
         }
         return ts.visitEachChild(node, visit, context)
       }

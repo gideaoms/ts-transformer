@@ -73,6 +73,22 @@ describe('Transformer', function () {
     expect(compile(sourceText)).toEqual(expected)
   })
 
+  it('should transform "roles as string[]"', function () {
+    const sourceText =
+      'const sayHello = ({ roles as string[] }) => {}'
+    const expected =
+      'const sayHello = ({ roles }: {roles: string[];}) => { };'
+    expect(compile(sourceText)).toEqual(expected)
+  })
+
+  it('should transform irregular type "roles as string   [    ]"', function () {
+    const sourceText =
+      'const sayHello = ({ roles as string   [   ] }) => {}'
+    const expected =
+      'const sayHello = ({ roles }: {roles: string[];}) => { };'
+    expect(compile(sourceText)).toEqual(expected)
+  })
+
   it.todo('should support type reference')
 
   it.todo('should support nested object')
