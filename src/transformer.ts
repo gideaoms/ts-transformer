@@ -1,11 +1,10 @@
 import ts from 'typescript'
 
 export default function (
-  program: ts.Program,
+  _program: ts.Program,
   _pluginConfig: ts.PluginConfig,
   extras: ts.TransformerExtras
 ) {
-  const checker = program.getTypeChecker()
   extras.removeDiagnostic(0)
   extras.removeDiagnostic(0)
   return function (context: ts.TransformationContext) {

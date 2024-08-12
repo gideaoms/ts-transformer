@@ -2,12 +2,7 @@
   "extends": "@tsconfig/node20/tsconfig.json",
   "compilerOptions": {
     "outDir": "dist",
-    "baseUrl": "src",
-    "plugins": [
-      {
-        "transform": "./src/transformer.ts"
-      }
-    ]
+    "baseUrl": "src"
   },
   "include": ["src"]
 }
