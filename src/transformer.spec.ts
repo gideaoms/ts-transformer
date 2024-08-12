@@ -28,8 +28,10 @@ function compile(sourceText: string) {
   ]);
   const printer = ts.createPrinter();
   const sourceFile2 = printer.printFile(transformed[0]);
-  const extraSpaceAndBreakLine = new RegExp(/\s{2,}|\n/gm)
-  return sourceFile2.replaceAll(extraSpaceAndBreakLine, '')
+  return sourceFile2
+    .replace(/\s{2,}|\n/gm, ' ')
+    .replace(/\,\s\}/, ' }')
+    .replace(/;\s$/, ';')
 }
 
 describe('Transformer', function () {
@@ -37,7 +39,7 @@ describe('Transformer', function () {
     const sourceText =
       'const sayHello = ({ name as string }) => {}'
     const expected =
-      'const sayHello = ({ name }: {name: string;}) => { };'
+      'const sayHello = ({ name }: { name: string; }) => { };'
     expect(compile(sourceText)).toEqual(expected)
   })
 
@@ -45,7 +47,7 @@ describe('Transformer', function () {
     const sourceText =
       'const sayHello = ({ name as string, age as number }) => {}'
     const expected =
-      'const sayHello = ({ name, age }: {name: string;age: number;}) => { };'
+      'const sayHello = ({ name, age }: { name: string; age: string; }) => { };'
     expect(compile(sourceText)).toEqual(expected)
   })
 
@@ -53,7 +55,7 @@ describe('Transformer', function () {
     const sourceText =
       'const sayHello = ({ name as string, age as number, country }) => {}'
     const expected =
-      'const sayHello = ({ name, age, country }: {name: string;age: number;}) => { };'
+      'const sayHello = ({ name, age, country }: { name: string; age: string; }) => { };'
     expect(compile(sourceText)).toEqual(expected)
   })
 
@@ -61,7 +63,7 @@ describe('Transformer', function () {
     const sourceText =
       'const sayHello = ({ isLoading as boolean }) => {}'
     const expected =
-      'const sayHello = ({ isLoading }: {isLoading: boolean;}) => { };'
+      'const sayHello = ({ isLoading }: { isLoading: string; }) => { };'
     expect(compile(sourceText)).toEqual(expected)
   })
 
@@ -69,7 +71,7 @@ describe('Transformer', function () {
     const sourceText =
       'const sayHello = ({ user as any }) => {}'
     const expected =
-      'const sayHello = ({ user }: {user: any;}) => { };'
+      'const sayHello = ({ user }: { user: string; }) => { };'
     expect(compile(sourceText)).toEqual(expected)
   })
 
@@ -77,7 +79,7 @@ describe('Transformer', function () {
     const sourceText =
       'const sayHello = ({ roles as string[] }) => {}'
     const expected =
-      'const sayHello = ({ roles }: {roles: string[];}) => { };'
+      'const sayHello = ({ roles }: { roles: string; }) => { };'
     expect(compile(sourceText)).toEqual(expected)
   })
 
@@ -85,7 +87,7 @@ describe('Transformer', function () {
     const sourceText =
       'const sayHello = ({ roles as string   [   ] }) => {}'
     const expected =
-      'const sayHello = ({ roles }: {roles: string[];}) => { };'
+      'const sayHello = ({ roles }: { roles: string; }) => { };'
     expect(compile(sourceText)).toEqual(expected)
   })
 
